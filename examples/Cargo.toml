@@ -33,6 +33,9 @@ members = [
   "ssz-withdrawals/script",
   "tendermint/program",
   "tendermint/script",
+  "scalar-multiplication-rust/program",
+  "scalar-multiplication-rust/script",
+  "scalar-multiplication-rust/banderwagonrust",
 ]
 resolver = "2"
 

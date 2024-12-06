@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="EMPTY_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/crates/build/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/cli/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/core/executor/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/core/machine/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/cuda/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/curves/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/derive/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/eval/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/helper/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/perf/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/primitives/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/prover/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/recursion/circuit/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/recursion/compiler/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/recursion/core/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/recursion/derive/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/recursion/gnark-cli/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/recursion/gnark-ffi/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/sdk/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/stark/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/bls12381-add/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/bls12381-decompress/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/bls12381-double/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/bls12381-fp/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/bls12381-fp2-addsub/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/bls12381-fp2-mul/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/bls12381-mul/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/bn254-add/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/bn254-double/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/bn254-fp/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/bn254-fp2-addsub/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/bn254-fp2-mul/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/bn254-mul/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/common/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/cycle-tracker/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/ed-add/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/ed-decompress/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/ed25519/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/fibonacci/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/hint-io/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/keccak-permute/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/keccak256/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/panic/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/rand/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/secp256k1-add/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/secp256k1-decompress/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/secp256k1-double/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/secp256k1-mul/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/secp256r1-add/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/secp256r1-decompress/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/secp256r1-double/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/sha-compress/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/sha-extend/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/sha2/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/tendermint-benchmark/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/u256x2048-mul/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/uint256-arith/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/uint256-mul/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/verify-proof/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-artifacts/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/verifier/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/zkvm/entrypoint/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/zkvm/lib/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/aggregation/program/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/aggregation/script/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/bls12381/program/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/bls12381/script/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/bn254/program/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/bn254/script/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/chess/program/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/chess/script/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/cycle-tracking/script/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/fibonacci/program/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/fibonacci/script/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/groth16/program/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/groth16/script/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/io/program/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/io/script/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/is-prime/program/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/is-prime/script/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/json/lib/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/json/program/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/json/script/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/patch-testing/program/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/patch-testing/script/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/regex/program/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/regex/script/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/rsa/program/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/rsa/script/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/rsp/program/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/rsp/script/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/ssz-withdrawals/program/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/ssz-withdrawals/script/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/tendermint/program/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/tendermint/script/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/scalar-multiplication-rust/banderwagonrust/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/scalar-multiplication-rust/program/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/scalar-multiplication-rust/script/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/crates/test-artifacts/programs/target" />
+      <excludeFolder url="file://$MODULE_DIR$/examples/target" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>

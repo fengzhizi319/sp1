@@ -232,23 +232,33 @@ impl<E: WeierstrassParameters> AffinePoint<SwCurve<E>> {
     #[cfg(feature = "bigint-rug")]
     pub fn sw_add_rug(&self, other: &AffinePoint<SwCurve<E>>) -> AffinePoint<SwCurve<E>> {
         use rug::Complete;
+        // 获取椭圆曲线的模数
         let p = biguint_to_rug(&E::BaseField::modulus());
+        // 获��当前点的 x 和 y 坐标
         let self_x = biguint_to_rug(&self.x);
         let self_y = biguint_to_rug(&self.y);
+        // 获取另一个点的 x 和 y 坐标
         let other_x = biguint_to_rug(&other.x);
         let other_y = biguint_to_rug(&other.y);
 
+        // 计算斜率的分子 (other_y - self_y)
         let slope_numerator = ((&p + &other_y).complete() - &self_y) % &p;
+        // 计算斜率的分母 (other_x - self_x)
         let slope_denominator = ((&p + &other_x).complete() - &self_x) % &p;
+        // 计算斜率分母的逆元
         let slope_denom_inverse = slope_denominator
             .pow_mod_ref(&(&p - &rug::Integer::from(2u32)).complete(), &p)
             .unwrap()
             .complete();
+        // 计算斜率
         let slope = (slope_numerator * &slope_denom_inverse) % &p;
 
+        // 计算新点的 x 坐标
         let x_3n = ((&slope * &slope + &p).complete() + &p - &self_x - &other_x) % &p;
+        // 计算新点的 y 坐标
         let y_3n = ((&slope * &((&p + &self_x).complete() - &x_3n) + &p).complete() - &self_y) % &p;
 
+        // 返回新的椭圆曲线点
         AffinePoint::new(rug_to_biguint(&x_3n), rug_to_biguint(&y_3n))
     }
 

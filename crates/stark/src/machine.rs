@@ -169,14 +169,14 @@ impl<SC: StarkGenericConfig, A: MachineAir<Val<SC>>> StarkMachine<SC, A> {
         self.chips().iter().map(|chip| proof.chip_ordering.get(&chip.name()).copied()).collect()
     }
 
-    /// The setup preprocessing phase.
+    /// 预处理阶段的设置。
     ///
-    /// Given a program, this function generates the proving and verifying keys. The keys correspond
-    /// to the program code and other preprocessed colunms such as lookup tables.
+    /// 给定一个程序，此函数生成证明密钥和验证密钥。密钥对应于程序代码和其他预处理列，如查找表。
     #[instrument("setup machine", level = "debug", skip_all)]
     #[allow(clippy::map_unwrap_or)]
     #[allow(clippy::redundant_closure_for_method_calls)]
     pub fn setup(&self, program: &A::Program) -> (StarkProvingKey<SC>, StarkVerifyingKey<SC>) {
+        // 创建一个父级 span，用于生成预处理痕迹
         let parent_span = tracing::debug_span!("generate preprocessed traces");
         let mut named_preprocessed_traces = parent_span.in_scope(|| {
             self.chips()
@@ -184,14 +184,15 @@ impl<SC: StarkGenericConfig, A: MachineAir<Val<SC>>> StarkMachine<SC, A> {
                 .filter_map(|chip| {
                     let chip_name = chip.name();
                     let begin = Instant::now();
+                    // 生成预处理痕迹
                     let prep_trace = chip.generate_preprocessed_trace(program);
                     tracing::debug!(
-                        parent: &parent_span,
-                        "generated preprocessed trace for chip {} in {:?}",
-                        chip_name,
-                        begin.elapsed()
-                    );
-                    // Assert that the chip width data is correct.
+                    parent: &parent_span,
+                    "generated preprocessed trace for chip {} in {:?}",
+                    chip_name,
+                    begin.elapsed()
+                );
+                    // 断言芯片��度数据是正确的
                     let expected_width = prep_trace.as_ref().map(|t| t.width()).unwrap_or(0);
                     assert_eq!(
                         expected_width,
@@ -203,7 +204,7 @@ impl<SC: StarkGenericConfig, A: MachineAir<Val<SC>>> StarkMachine<SC, A> {
                 .collect::<Vec<_>>()
         });
 
-        // Order the chips and traces by trace size (biggest first), and get the ordering map.
+        // 按痕迹大小（从大到小）对芯片和痕迹进行排序，并获取排序映射
         named_preprocessed_traces
             .sort_by_key(|(name, _, trace)| (Reverse(trace.height()), name.clone()));
 
@@ -216,11 +217,11 @@ impl<SC: StarkGenericConfig, A: MachineAir<Val<SC>>> StarkMachine<SC, A> {
             })
             .unzip();
 
-        // Commit to the batch of traces.
+        // 批量提交痕迹
         let (commit, data) = tracing::debug_span!("commit to preprocessed traces")
             .in_scope(|| pcs.commit(domains_and_traces));
 
-        // Get the chip ordering.
+        // 获取芯片排序
         let chip_ordering = named_preprocessed_traces
             .iter()
             .enumerate()
@@ -232,7 +233,7 @@ impl<SC: StarkGenericConfig, A: MachineAir<Val<SC>>> StarkMachine<SC, A> {
             .map(|(_, local_only, _)| local_only.to_owned())
             .collect::<Vec<_>>();
 
-        // Get the preprocessed traces
+        // 获取预处理痕迹
         let traces =
             named_preprocessed_traces.into_iter().map(|(_, _, trace)| trace).collect::<Vec<_>>();
 
@@ -341,7 +342,7 @@ impl<SC: StarkGenericConfig, A: MachineAir<Val<SC>>> StarkMachine<SC, A> {
                         shard_proof,
                         &global_permutation_challenges,
                     )
-                    .map_err(MachineVerificationError::InvalidShardProof)
+                        .map_err(MachineVerificationError::InvalidShardProof)
                 })?;
             }
 

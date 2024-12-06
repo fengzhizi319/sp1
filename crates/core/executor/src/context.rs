@@ -57,22 +57,32 @@ impl<'a> SP1ContextBuilder<'a> {
     ///
     /// Clears and resets the builder, allowing it to be reused.
     pub fn build(&mut self) -> SP1Context<'a> {
-        // If hook_registry_entries is nonempty or no_default_hooks true,
-        // indicating a non-default value of hook_registry.
+        // 如果 hook_registry_entries 非空或 no_default_hooks 为 true，
+        // 则表示 hook_registry 的值为非默认值。
         let hook_registry =
             (!self.hook_registry_entries.is_empty() || self.no_default_hooks).then(|| {
+                // 如果 no_default_hooks 为 true，则初始化一个空的 HashMap，
+                // 否则使用默认的 HookRegistry 表。
                 let mut table = if take(&mut self.no_default_hooks) {
                     HashMap::default()
                 } else {
                     HookRegistry::default().table
                 };
-                // Allows overwriting default hooks.
+                // 允许覆盖默认的 hooks。
                 table.extend(take(&mut self.hook_registry_entries));
                 HookRegistry { table }
             });
+
+        // 获取 subproof_verifier 的值并重置为 None。
         let subproof_verifier = take(&mut self.subproof_verifier);
+
+        // 获取 max_cycles 的值并重置为 None。
         let cycle_limit = take(&mut self.max_cycles);
+
+        // 获取 skip_deferred_proof_verification 的值并重置为 false。
         let skip_deferred_proof_verification = take(&mut self.skip_deferred_proof_verification);
+
+        // 返回构建的 SP1Context 实例。
         SP1Context {
             hook_registry,
             subproof_verifier,

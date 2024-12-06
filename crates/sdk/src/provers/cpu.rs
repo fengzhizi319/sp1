@@ -50,7 +50,7 @@ impl Prover<DefaultProverComponents> for CpuProver {
         context: SP1Context<'a>,
         kind: SP1ProofKind,
     ) -> Result<SP1ProofWithPublicValues> {
-        // Generate the core proof.
+        // 生成核心证明
         let proof: sp1_prover::SP1ProofWithMetadata<sp1_prover::SP1CoreProofData> =
             self.prover.prove_core(pk, &stdin, opts.sp1_prover_opts, context)?;
         if kind == SP1ProofKind::Core {
@@ -62,11 +62,12 @@ impl Prover<DefaultProverComponents> for CpuProver {
             });
         }
 
+        // 收集延迟证明
         let deferred_proofs =
             stdin.proofs.iter().map(|(reduce_proof, _)| reduce_proof.clone()).collect();
         let public_values = proof.public_values.clone();
 
-        // Generate the compressed proof.
+        // 生成压缩证明
         let reduce_proof =
             self.prover.compress(&pk.vk, proof, deferred_proofs, opts.sp1_prover_opts)?;
         if kind == SP1ProofKind::Compressed {
@@ -78,13 +79,14 @@ impl Prover<DefaultProverComponents> for CpuProver {
             });
         }
 
-        // Generate the shrink proof.
+        // 生成缩减证明
         let compress_proof = self.prover.shrink(reduce_proof, opts.sp1_prover_opts)?;
 
-        // Genenerate the wrap proof.
+        // 生成包裹证明
         let outer_proof = self.prover.wrap_bn254(compress_proof, opts.sp1_prover_opts)?;
 
         if kind == SP1ProofKind::Plonk {
+            // 获取 Plonk 证明所需的工件
             let plonk_bn254_artifacts = if sp1_prover::build::sp1_dev_mode() {
                 sp1_prover::build::try_build_plonk_bn254_artifacts_dev(
                     &outer_proof.vk,
@@ -102,6 +104,7 @@ impl Prover<DefaultProverComponents> for CpuProver {
                 sp1_version: self.version().to_string(),
             });
         } else if kind == SP1ProofKind::Groth16 {
+            // 获取 Groth16 证���所需的工件
             let groth16_bn254_artifacts = if sp1_prover::build::sp1_dev_mode() {
                 sp1_prover::build::try_build_groth16_bn254_artifacts_dev(
                     &outer_proof.vk,

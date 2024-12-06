@@ -11,6 +11,16 @@ use crate::{
 pub(crate) struct Uint256MulSyscall;
 
 impl Syscall for Uint256MulSyscall {
+    /// 执行 Uint256 乘法系统调用。
+    ///
+    /// # 参数
+    /// - `rt`: 系统调用上下文。
+    /// - `syscall_code`: 系统调用代码。
+    /// - `arg1`: 第一个参数，表示 x 值的指针。
+    /// - `arg2`: 第二个参数，表示 y 值的指针。
+    ///
+    /// # 返回值
+    /// 返回一个可选的 u32 值。
     fn execute(
         &self,
         rt: &mut SyscallContext,
@@ -22,30 +32,29 @@ impl Syscall for Uint256MulSyscall {
 
         let x_ptr = arg1;
         if x_ptr % 4 != 0 {
-            panic!();
+            panic!(); // 如果 x 指针不是 4 的倍数，则触发 panic
         }
         let y_ptr = arg2;
         if y_ptr % 4 != 0 {
-            panic!();
+            panic!(); // 如果 y 指针不是 4 的倍数，则触发 panic
         }
 
-        // First read the words for the x value. We can read a slice_unsafe here because we write
-        // the computed result to x later.
+        // 首先读取 x 值的字。我们可以在这里读取一个不安全的切片，因为稍后会将计算结果写入 x。
         let x = rt.slice_unsafe(x_ptr, WORDS_FIELD_ELEMENT);
 
-        // Read the y value.
+        // 读取 y 值。
         let (y_memory_records, y) = rt.mr_slice(y_ptr, WORDS_FIELD_ELEMENT);
 
-        // The modulus is stored after the y value. We increment the pointer by the number of words.
+        // 模数存储在 y 值之后。我们通过字长度增加指针。
         let modulus_ptr = y_ptr + WORDS_FIELD_ELEMENT as u32 * WORD_SIZE as u32;
         let (modulus_memory_records, modulus) = rt.mr_slice(modulus_ptr, WORDS_FIELD_ELEMENT);
 
-        // Get the BigUint values for x, y, and the modulus.
+        // 获取 x、y 和模数的 BigUint 值。
         let uint256_x = BigUint::from_bytes_le(&words_to_bytes_le_vec(&x));
         let uint256_y = BigUint::from_bytes_le(&words_to_bytes_le_vec(&y));
         let uint256_modulus = BigUint::from_bytes_le(&words_to_bytes_le_vec(&modulus));
 
-        // Perform the multiplication and take the result modulo the modulus.
+        // 执行乘法并取模数的结果。
         let result: BigUint = if uint256_modulus.is_zero() {
             let modulus = BigUint::one() << 256;
             (uint256_x * uint256_y) % modulus
@@ -54,14 +63,14 @@ impl Syscall for Uint256MulSyscall {
         };
 
         let mut result_bytes = result.to_bytes_le();
-        result_bytes.resize(32, 0u8); // Pad the result to 32 bytes.
+        result_bytes.resize(32, 0u8); // 将结果填充到 32 字节。
 
-        // Convert the result to little endian u32 words.
+        // 将结果转换为小端 u32 字。
         let result = bytes_to_words_le::<8>(&result_bytes);
 
-        // Increment clk so that the write is not at the same cycle as the read.
+        // 增加 clk 以便写入不与读取在同一个周期。
         rt.clk += 1;
-        // Write the result to x and keep track of the memory records.
+        // 将结果写入 x 并跟踪内存记录。
         let x_memory_records = rt.mw_slice(x_ptr, &result);
 
         let lookup_id = rt.syscall_lookup_id;

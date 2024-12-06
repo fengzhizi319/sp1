@@ -721,6 +721,14 @@ impl<'a> Executor<'a> {
         }
     }
 
+    /// 发出系统调用事件。
+    ///
+    /// # 参数
+    /// - `clk`: 当前时钟周期。
+    /// - `syscall_id`: 系统调用的标识符。
+    /// - `arg1`: 系统调用的第一个参数。
+    /// - `arg2`: 系统调用的第二个参数。
+    /// - `lookup_id`: 查找 ID，用于标识此系统调用事件。
     fn emit_syscall(
         &mut self,
         clk: u32,
@@ -729,8 +737,10 @@ impl<'a> Executor<'a> {
         arg2: u32,
         lookup_id: LookupId,
     ) {
+        // 创建一个系统调用事件
         let syscall_event = self.syscall_event(clk, syscall_id, arg1, arg2, lookup_id);
 
+        // 将系统调用事件添加到记录的系统调用事件列表中
         self.record.syscall_events.push(syscall_event);
     }
 
@@ -807,17 +817,23 @@ impl<'a> Executor<'a> {
     /// Execute the given instruction over the current state of the runtime.
     #[allow(clippy::too_many_lines)]
     fn execute_instruction(&mut self, instruction: &Instruction) -> Result<(), ExecutionError> {
+        // 获取当前的程序计数器和时钟周期
         let mut pc = self.state.pc;
         let mut clk = self.state.clk;
         let mut exit_code = 0u32;
 
+        // 计算下一条指令的程序计数器
         let mut next_pc = self.state.pc.wrapping_add(4);
 
+        // 定义操作数 a, b, c
         let (a, b, c): (u32, u32, u32);
 
+        // 如果执行模式为 Trace，则重置内存访问记录
         if self.executor_mode == ExecutorMode::Trace {
             self.memory_accesses = MemoryAccessRecord::default();
         }
+
+        // 创建查找 ID
         let lookup_id = if self.executor_mode == ExecutorMode::Trace {
             self.record.create_lookup_id()
         } else {
@@ -829,6 +845,7 @@ impl<'a> Executor<'a> {
             LookupId::default()
         };
 
+        // 如果不在非约束模式下，更新报告中的操作码计数
         if !self.unconstrained {
             self.report.opcode_counts[instruction.opcode] += 1;
             self.report.event_counts[instruction.opcode] += 1;
@@ -857,8 +874,9 @@ impl<'a> Executor<'a> {
             };
         }
 
+        // 根据指令的操作码执行相应的操作
         match instruction.opcode {
-            // Arithmetic instructions.
+            // 算术指令
             Opcode::ADD
             | Opcode::SUB
             | Opcode::XOR
@@ -880,22 +898,22 @@ impl<'a> Executor<'a> {
                 (a, b, c) = self.execute_alu(instruction, lookup_id);
             }
 
-            // Load instructions.
+            // 加载指令
             Opcode::LB | Opcode::LH | Opcode::LW | Opcode::LBU | Opcode::LHU => {
                 (a, b, c) = self.execute_load(instruction)?;
             }
 
-            // Store instructions.
+            // 存储指令
             Opcode::SB | Opcode::SH | Opcode::SW => {
                 (a, b, c) = self.execute_store(instruction)?;
             }
 
-            // Branch instructions.
+            // 分支指令
             Opcode::BEQ | Opcode::BNE | Opcode::BLT | Opcode::BGE | Opcode::BLTU | Opcode::BGEU => {
                 (a, b, c, next_pc) = self.execute_branch(instruction, next_pc);
             }
 
-            // Jump instructions.
+            // 跳转指令
             Opcode::JAL => {
                 let (rd, imm) = instruction.j_type();
                 (b, c) = (imm, 0);
@@ -911,7 +929,7 @@ impl<'a> Executor<'a> {
                 next_pc = b.wrapping_add(c);
             }
 
-            // Upper immediate instructions.
+            // 上位立即数指令
             Opcode::AUIPC => {
                 let (rd, imm) = instruction.u_type();
                 (b, c) = (imm, imm);
@@ -919,33 +937,28 @@ impl<'a> Executor<'a> {
                 self.rw(rd, a);
             }
 
-            // System instructions.
+            // 系统调用指令
             Opcode::ECALL => {
-                // We peek at register x5 to get the syscall id. The reason we don't `self.rr` this
-                // register is that we write to it later.
+                // 获取系统调用 ID
                 let t0 = Register::X5;
                 let syscall_id = self.register(t0);
                 c = self.rr(Register::X11, MemoryAccessPosition::C);
                 b = self.rr(Register::X10, MemoryAccessPosition::B);
                 let syscall = SyscallCode::from_u32(syscall_id);
 
+                // 更新报告中的系统调用计数
                 if self.print_report && !self.unconstrained {
                     self.report.syscall_counts[syscall] += 1;
                 }
 
-                // `hint_slice` is allowed in unconstrained mode since it is used to write the hint.
-                // Other syscalls are not allowed because they can lead to non-deterministic
-                // behavior, especially since many syscalls modify memory in place,
-                // which is not permitted in unconstrained mode. This will result in
-                // non-zero memory interactions when generating a proof.
-
+                // 检查非约束模式下的系统调用
                 if self.unconstrained
                     && (syscall != SyscallCode::EXIT_UNCONSTRAINED && syscall != SyscallCode::WRITE)
                 {
                     return Err(ExecutionError::InvalidSyscallUsage(syscall_id as u64));
                 }
 
-                // Update the syscall counts.
+                // 更新系统调用计数
                 let syscall_for_count = syscall.count_map();
                 let syscall_count = self.state.syscall_counts.entry(syscall_for_count).or_insert(0);
                 let (threshold, multiplier) = match syscall_for_count {
@@ -958,6 +971,7 @@ impl<'a> Executor<'a> {
                 self.record.nonce_lookup[syscall_lookup_id.0 as usize] = nonce;
                 *syscall_count += 1;
 
+                // 获取系统调用实现并执行
                 let syscall_impl = self.get_syscall(syscall).cloned();
                 if syscall.should_send() != 0 && self.executor_mode == ExecutorMode::Trace {
                     self.emit_syscall(clk, syscall.syscall_id(), b, c, syscall_lookup_id);
@@ -966,9 +980,6 @@ impl<'a> Executor<'a> {
                 precompile_rt.syscall_lookup_id = syscall_lookup_id;
                 let (precompile_next_pc, precompile_cycles, returned_exit_code) =
                     if let Some(syscall_impl) = syscall_impl {
-                        // Executing a syscall optionally returns a value to write to the t0
-                        // register. If it returns None, we just keep the
-                        // syscall_id in t0.
                         let res = syscall_impl.execute(&mut precompile_rt, syscall, b, c);
                         if let Some(val) = res {
                             a = val;
@@ -976,7 +987,7 @@ impl<'a> Executor<'a> {
                             a = syscall_id;
                         }
 
-                        // If the syscall is `HALT` and the exit code is non-zero, return an error.
+                        // 如果系统调用是 HALT 且退出码非零，则返回错误
                         if syscall == SyscallCode::HALT && precompile_rt.exit_code != 0 {
                             return Err(ExecutionError::HaltWithNonZeroExitCode(
                                 precompile_rt.exit_code,
@@ -992,7 +1003,7 @@ impl<'a> Executor<'a> {
                         return Err(ExecutionError::UnsupportedSyscall(syscall_id));
                     };
 
-                // Allow the syscall impl to modify state.clk/pc (exit unconstrained does this)
+                // 允许系统调用实现修改状态
                 clk = self.state.clk;
                 pc = self.state.pc;
 
@@ -1005,19 +1016,19 @@ impl<'a> Executor<'a> {
                 return Err(ExecutionError::Breakpoint());
             }
 
-            // See https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md#instruction-aliases
+            // 未实现的指令
             Opcode::UNIMP => {
                 return Err(ExecutionError::Unimplemented());
             }
         }
 
-        // Update the program counter.
+        // 更新程序计数器
         self.state.pc = next_pc;
 
-        // Update the clk to the next cycle.
+        // 更新时钟周期
         self.state.clk += 4;
 
-        // Emit the CPU event for this cycle.
+        // 如果执行模式为 Trace，则发出 CPU 事件
         if self.executor_mode == ExecutorMode::Trace {
             self.emit_cpu(
                 clk,
@@ -1186,99 +1197,136 @@ impl<'a> Executor<'a> {
     #[inline]
     #[allow(clippy::too_many_lines)]
     fn execute_cycle(&mut self) -> Result<bool, ExecutionError> {
-        // Fetch the instruction at the current program counter.
+        // 从当前程序计数器获取指令
         let instruction = self.fetch();
 
-        // Log the current state of the runtime.
+        // 记录当前运行时的状态（仅在调试模式下）
         #[cfg(debug_assertions)]
         self.log(&instruction);
 
-        // Execute the instruction.
+        // 执行指令
         self.execute_instruction(&instruction)?;
 
-        // Increment the clock.
+        // 增加全局时钟
         self.state.global_clk += 1;
 
         if !self.unconstrained {
-            // If there's not enough cycles left for another instruction, move to the next shard.
+            // 如果剩余周期不足以执行另一条指令，则移动到下一个分片
             let cpu_exit = self.max_syscall_cycles + self.state.clk >= self.shard_size;
 
-            // Every N cycles, check if there exists at least one shape that fits.
+            // 每隔 N 个周期，检查是否存在至少一个匹配的形状
             //
-            // If we're close to not fitting, early stop the shard to ensure we don't OOM.
+            // 如果接近不匹配，则提前停止分片以确保不会超出内存
             let mut shape_match_found = true;
             if self.state.global_clk % 16 == 0 {
+                // 计算加法和减法操作的总数
                 let addsub_count = (self.report.event_counts[Opcode::ADD]
                     + self.report.event_counts[Opcode::SUB])
                     as usize;
+
+                // 计算乘法操作的总数，包括 MUL、MULH、MULHU 和 MULHSU
                 let mul_count = (self.report.event_counts[Opcode::MUL]
                     + self.report.event_counts[Opcode::MULH]
                     + self.report.event_counts[Opcode::MULHU]
                     + self.report.event_counts[Opcode::MULHSU])
                     as usize;
+
+                // 计算位操作的总数，包括 XOR、OR 和 AND
                 let bitwise_count = (self.report.event_counts[Opcode::XOR]
                     + self.report.event_counts[Opcode::OR]
                     + self.report.event_counts[Opcode::AND])
                     as usize;
+
+                // 计算左移操作的总数
                 let shift_left_count = self.report.event_counts[Opcode::SLL] as usize;
+
+                // 计算右移操作的总数，包括 SRL 和 SRA
                 let shift_right_count = (self.report.event_counts[Opcode::SRL]
                     + self.report.event_counts[Opcode::SRA])
                     as usize;
+
+                // 计算除法和取余操作的总数，包括 DIV、DIVU、REM 和 REMU
                 let divrem_count = (self.report.event_counts[Opcode::DIV]
                     + self.report.event_counts[Opcode::DIVU]
                     + self.report.event_counts[Opcode::REM]
                     + self.report.event_counts[Opcode::REMU])
                     as usize;
+
+                // 计算小于操作的总数，包括 SLT 和 SLTU
                 let lt_count = (self.report.event_counts[Opcode::SLT]
                     + self.report.event_counts[Opcode::SLTU])
                     as usize;
 
                 if let Some(maximal_shapes) = &self.maximal_shapes {
+                    // 初始化形状匹配标志为 false
                     shape_match_found = false;
 
+                    // 遍历所有最大形状
                     for shape in maximal_shapes.iter() {
+                        // 获取加法和减法操作的阈值
                         let addsub_threshold = 1 << shape["AddSub"];
+                        // 如果加法和减法操作计数超过阈值，跳过当前形状
                         if addsub_count > addsub_threshold {
                             continue;
                         }
+                        // 计算加法和减法操作距离阈值的差距
                         let addsub_distance = addsub_threshold - addsub_count;
 
+                        // 获取乘法操作的阈值
                         let mul_threshold = 1 << shape["Mul"];
+                        // 如果乘法操作计数超过阈值，跳过当前形状
                         if mul_count > mul_threshold {
                             continue;
                         }
+                        // 计算乘法操作距离阈值的差距
                         let mul_distance = mul_threshold - mul_count;
 
+                        // 获取位操作的阈值
                         let bitwise_threshold = 1 << shape["Bitwise"];
+                        // 如果位操作计数超过阈值，跳过当前形状
                         if bitwise_count > bitwise_threshold {
                             continue;
                         }
+                        // 计算位操作距离阈值的差距
                         let bitwise_distance = bitwise_threshold - bitwise_count;
 
+                        // 获取左移操作的阈值
                         let shift_left_threshold = 1 << shape["ShiftLeft"];
+                        // 如果左移操作计数超过阈值，跳过当前形状
                         if shift_left_count > shift_left_threshold {
                             continue;
                         }
+                        // 计算左移操作距离阈值的差距
                         let shift_left_distance = shift_left_threshold - shift_left_count;
 
+                        // 获取右移操作的阈值
                         let shift_right_threshold = 1 << shape["ShiftRight"];
+                        // 如果右移操作计数超过阈值，跳过当前形状
                         if shift_right_count > shift_right_threshold {
                             continue;
                         }
+                        // 计算右移操作距离阈值的差距
                         let shift_right_distance = shift_right_threshold - shift_right_count;
 
+                        // 获取除法和取余操作的阈值
                         let divrem_threshold = 1 << shape["DivRem"];
+                        // 如果除法和取余操作计数超过阈值，跳过当前形状
                         if divrem_count > divrem_threshold {
                             continue;
                         }
+                        // 计算除法和取余操作距离阈值的差距
                         let divrem_distance = divrem_threshold - divrem_count;
 
+                        // 获取小于操作的阈值
                         let lt_threshold = 1 << shape["Lt"];
+                        // 如果小于操作计数超过阈值，跳过当前形状
                         if lt_count > lt_threshold {
                             continue;
                         }
+                        // 计算小于操作距离阈值的差距
                         let lt_distance = lt_threshold - lt_count;
 
+                        // 计算所有操作距离阈值的最小值
                         let l_infinity = vec![
                             addsub_distance,
                             mul_distance,
@@ -1288,36 +1336,38 @@ impl<'a> Executor<'a> {
                             divrem_distance,
                             lt_distance,
                         ]
-                        .into_iter()
-                        .min()
-                        .unwrap();
+                            .into_iter()
+                            .min()
+                            .unwrap();
 
+                        // 如果最小值大于等于 32，表示找到了匹配的形状
                         if l_infinity >= 32 {
                             shape_match_found = true;
                             break;
                         }
                     }
 
+                    // 如果没有找到匹配的形状，记录警告日志并提前停止分片
                     if !shape_match_found {
                         log::warn!(
-                            "stopping shard early due to no shapes fitting: \
-                            nb_cycles={}, \
-                            addsub_count={}, \
-                            mul_count={}, \
-                            bitwise_count={}, \
-                            shift_left_count={}, \
-                            shift_right_count={}, \
-                            divrem_count={}, \
-                            lt_count={}",
-                            self.state.clk / 4,
-                            log2_ceil_usize(addsub_count),
-                            log2_ceil_usize(mul_count),
-                            log2_ceil_usize(bitwise_count),
-                            log2_ceil_usize(shift_left_count),
-                            log2_ceil_usize(shift_right_count),
-                            log2_ceil_usize(divrem_count),
-                            log2_ceil_usize(lt_count),
-                        );
+        "stopping shard early due to no shapes fitting: \
+        nb_cycles={}, \
+        addsub_count={}, \
+        mul_count={}, \
+        bitwise_count={}, \
+        shift_left_count={}, \
+        shift_right_count={}, \
+        divrem_count={}, \
+        lt_count={}",
+        self.state.clk / 4,
+        log2_ceil_usize(addsub_count),
+        log2_ceil_usize(mul_count),
+        log2_ceil_usize(bitwise_count),
+        log2_ceil_usize(shift_left_count),
+        log2_ceil_usize(shift_right_count),
+        log2_ceil_usize(divrem_count),
+        log2_ceil_usize(lt_count),
+    );
                     }
                 }
             }
@@ -1330,16 +1380,17 @@ impl<'a> Executor<'a> {
             }
         }
 
-        // If the cycle limit is exceeded, return an error.
+        // 如果超过了周期限制，则返回错误
         if let Some(max_cycles) = self.max_cycles {
             if self.state.global_clk >= max_cycles {
                 return Err(ExecutionError::ExceededCycleLimit(max_cycles));
             }
         }
 
+        // 检查程序是否已完成
         let done = self.state.pc == 0
             || self.state.pc.wrapping_sub(self.program.pc_base)
-                >= (self.program.instructions.len() * 4) as u32;
+            >= (self.program.instructions.len() * 4) as u32;
         if done && self.unconstrained {
             log::error!("program ended in unconstrained mode at clk {}", self.state.global_clk);
             return Err(ExecutionError::EndInUnconstrained());
@@ -1484,33 +1535,34 @@ impl<'a> Executor<'a> {
     /// Executes up to `self.shard_batch_size` cycles of the program, returning whether the program
     /// has finished.
     pub fn execute(&mut self) -> Result<bool, ExecutionError> {
-        // Initialize the nonce lookup table if it's uninitialized.
+        // 如果 nonce 查找表未初始化，则初始化它
         if self.record.nonce_lookup.len() <= 2 {
             self.record.nonce_lookup = vec![0; self.opts.shard_size * 32];
         }
 
-        // Get the program.
+        // 获取程序
         let program = self.program.clone();
 
-        // Get the current shard.
+        // 获取当前分片
         let start_shard = self.state.current_shard;
 
-        // If it's the first cycle, initialize the program.
+        // 如果是第一个周期，则初始化程序
         if self.state.global_clk == 0 {
             self.initialize();
         }
 
-        // Loop until we've executed `self.shard_batch_size` shards if `self.shard_batch_size` is
-        // set.
+        // 循环执行，直到执行了 `self.shard_batch_size` 个分片（如果设置了 `self.shard_batch_size`）
         let mut done = false;
         let mut current_shard = self.state.current_shard;
         let mut num_shards_executed = 0;
         loop {
+            // 执行一个周期，如果程序结束则退出循环
             if self.execute_cycle()? {
                 done = true;
                 break;
             }
 
+            // 如果当前分片与之前不同，则增加已执行分片数
             if self.shard_batch_size > 0 && current_shard != self.state.current_shard {
                 num_shards_executed += 1;
                 current_shard = self.state.current_shard;
@@ -1520,22 +1572,23 @@ impl<'a> Executor<'a> {
             }
         }
 
-        // Get the final public values.
+        // 获取最终的公共值
         let public_values = self.record.public_values;
 
         if done {
+            // 进行后处理
             self.postprocess();
 
-            // Push the remaining execution record with memory initialize & finalize events.
+            // 推送剩余的执行记录，包括内存初始化和最终化事件
             self.bump_record();
         }
 
-        // Push the remaining execution record, if there are any CPU events.
+        // 如果有任何 CPU 事件，则推送剩余的执行记录
         if !self.record.cpu_events.is_empty() {
             self.bump_record();
         }
 
-        // Set the global public values for all shards.
+        // 为所有分片设置全局公共值
         let mut last_next_pc = 0;
         let mut last_exit_code = 0;
         for (i, record) in self.records.iter_mut().enumerate() {
@@ -1594,7 +1647,7 @@ impl<'a> Executor<'a> {
 
         if self.emit_global_memory_events
             && (self.executor_mode == ExecutorMode::Trace
-                || self.executor_mode == ExecutorMode::Checkpoint)
+            || self.executor_mode == ExecutorMode::Checkpoint)
         {
             // SECTION: Set up all MemoryInitializeFinalizeEvents needed for memory argument.
             let memory_finalize_events = &mut self.record.global_memory_finalize_events;

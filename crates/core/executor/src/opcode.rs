@@ -78,6 +78,9 @@ pub enum Opcode {
     /// rd ← pc + 4, pc ← (rs1 + imm) & ∼1
     JALR = 25,
     /// rd ← pc + imm, pc ← pc + 4
+    //AUIPC（Add Upper Immediate to PC）是RISC-V指令集中的一条指令。
+    // 其主要作用是将一个20位的立即数加到程序计数器（PC）的高20位，
+    // 并将结果存储在目标寄存器中。这通常用于位置无关代码和生成跳转和调用的地址。
     AUIPC = 27,
     /// Transfer control to the debugger.
     ECALL = 28,

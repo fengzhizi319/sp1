@@ -161,81 +161,91 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         Self::uninitialized()
     }
 
-    /// Creates a new [SP1Prover] with lazily initialized components.
-    pub fn uninitialized() -> Self {
-        // Initialize the provers.
-        let core_machine = RiscvAir::machine(CoreSC::default());
-        let core_prover = C::CoreProver::new(core_machine);
+    /// 创建一个新的 [SP1Prover]，并延迟初始化组件。
+pub fn uninitialized() -> Self {
+    // 初始化核心证明器。
+    let core_machine = RiscvAir::machine(CoreSC::default());
+    let core_prover = C::CoreProver::new(core_machine);
 
-        let compress_machine = CompressAir::compress_machine(InnerSC::default());
-        let compress_prover = C::CompressProver::new(compress_machine);
+    // 初始化压缩证明器。
+    let compress_machine = CompressAir::compress_machine(InnerSC::default());
+    let compress_prover = C::CompressProver::new(compress_machine);
 
-        // TODO: Put the correct shrink and wrap machines here.
-        let shrink_machine = ShrinkAir::shrink_machine(InnerSC::compressed());
-        let shrink_prover = C::ShrinkProver::new(shrink_machine);
+    // TODO: 在此处放置正确的缩减和包装机器。
+    // 初始化缩减证明器。
+    let shrink_machine = ShrinkAir::shrink_machine(InnerSC::compressed());
+    let shrink_prover = C::ShrinkProver::new(shrink_machine);
 
-        let wrap_machine = WrapAir::wrap_machine(OuterSC::default());
-        let wrap_prover = C::WrapProver::new(wrap_machine);
+    // 初始化包装证明器。
+    let wrap_machine = WrapAir::wrap_machine(OuterSC::default());
+    let wrap_prover = C::WrapProver::new(wrap_machine);
 
-        let core_cache_size = NonZeroUsize::new(
-            env::var("PROVER_CORE_CACHE_SIZE")
-                .unwrap_or_else(|_| CORE_CACHE_SIZE.to_string())
-                .parse()
-                .unwrap_or(CORE_CACHE_SIZE),
-        )
-        .expect("PROVER_CORE_CACHE_SIZE must be a non-zero usize");
+    // 获取核心缓存大小，默认为 CORE_CACHE_SIZE。
+    let core_cache_size = NonZeroUsize::new(
+        env::var("PROVER_CORE_CACHE_SIZE")
+            .unwrap_or_else(|_| CORE_CACHE_SIZE.to_string())
+            .parse()
+            .unwrap_or(CORE_CACHE_SIZE),
+    )
+    .expect("PROVER_CORE_CACHE_SIZE 必须是非零的 usize");
 
-        let compress_cache_size = NonZeroUsize::new(
-            env::var("PROVER_COMPRESS_CACHE_SIZE")
-                .unwrap_or_else(|_| CORE_CACHE_SIZE.to_string())
-                .parse()
-                .unwrap_or(COMPRESS_CACHE_SIZE),
-        )
-        .expect("PROVER_COMPRESS_CACHE_SIZE must be a non-zero usize");
+    // 获取压缩缓存大小，默认为 COMPRESS_CACHE_SIZE。
+    let compress_cache_size = NonZeroUsize::new(
+        env::var("PROVER_COMPRESS_CACHE_SIZE")
+            .unwrap_or_else(|_| CORE_CACHE_SIZE.to_string())
+            .parse()
+            .unwrap_or(COMPRESS_CACHE_SIZE),
+    )
+    .expect("PROVER_COMPRESS_CACHE_SIZE 必须是非零的 usize");
 
-        let core_shape_config = env::var("FIX_CORE_SHAPES")
-            .map(|v| v.eq_ignore_ascii_case("true"))
-            .unwrap_or(true)
-            .then_some(CoreShapeConfig::default());
+    // 获取核心形状配置，如果环境变量 FIX_CORE_SHAPES 为 true，则使用默认配置。
+    let core_shape_config = env::var("FIX_CORE_SHAPES")
+        .map(|v| v.eq_ignore_ascii_case("true"))
+        .unwrap_or(true)
+        .then_some(CoreShapeConfig::default());
 
-        let recursion_shape_config = env::var("FIX_RECURSION_SHAPES")
-            .map(|v| v.eq_ignore_ascii_case("true"))
-            .unwrap_or(true)
-            .then_some(RecursionShapeConfig::default());
+    // 获取递归形状配置，如果环境变量 FIX_RECURSION_SHAPES 为 true，则使用默认配置。
+    let recursion_shape_config = env::var("FIX_RECURSION_SHAPES")
+        .map(|v| v.eq_ignore_ascii_case("true"))
+        .unwrap_or(true)
+        .then_some(RecursionShapeConfig::default());
 
-        let vk_verification =
-            env::var("VERIFY_VK").map(|v| v.eq_ignore_ascii_case("true")).unwrap_or(false);
+    // 获取 VK 验证配置，如果环境变量 VERIFY_VK 为 true，则启用 VK 验证。
+    let vk_verification =
+        env::var("VERIFY_VK").map(|v| v.eq_ignore_ascii_case("true")).unwrap_or(false);
 
-        tracing::debug!("vk verification: {}", vk_verification);
+    tracing::debug!("vk verification: {}", vk_verification);
 
-        // Read the shapes from the shapes directory and deserialize them into memory.
-        let allowed_vk_map: BTreeMap<[BabyBear; DIGEST_SIZE], usize> = if vk_verification {
-            bincode::deserialize(include_bytes!("../vk_map.bin")).unwrap()
-        } else {
-            bincode::deserialize(include_bytes!("../dummy_vk_map.bin")).unwrap()
-        };
+    // 从 shapes 目录读取形状并反序列化到内存中。
+    let allowed_vk_map: BTreeMap<[BabyBear; DIGEST_SIZE], usize> = if vk_verification {
+        bincode::deserialize(include_bytes!("../vk_map.bin")).unwrap()
+    } else {
+        bincode::deserialize(include_bytes!("../dummy_vk_map.bin")).unwrap()
+    };
 
-        let (root, merkle_tree) = MerkleTree::commit(allowed_vk_map.keys().copied().collect());
+    // 计算 Merkle 树的根和树结构。
+    let (root, merkle_tree) = MerkleTree::commit(allowed_vk_map.keys().copied().collect());
 
-        Self {
-            core_prover,
-            compress_prover,
-            shrink_prover,
-            wrap_prover,
-            recursion_programs: Mutex::new(LruCache::new(core_cache_size)),
-            recursion_cache_misses: AtomicUsize::new(0),
-            compress_programs: Mutex::new(LruCache::new(compress_cache_size)),
-            compress_cache_misses: AtomicUsize::new(0),
-            vk_root: root,
-            vk_merkle_tree: merkle_tree,
-            allowed_vk_map,
-            core_shape_config,
-            recursion_shape_config,
-            vk_verification,
-            wrap_program: OnceLock::new(),
-            wrap_vk: OnceLock::new(),
-        }
+    // 返回初始化后的 SP1Prover 实例。
+    Self {
+        core_prover,
+        compress_prover,
+        shrink_prover,
+        wrap_prover,
+        recursion_programs: Mutex::new(LruCache::new(core_cache_size)),
+        recursion_cache_misses: AtomicUsize::new(0),
+        compress_programs: Mutex::new(LruCache::new(compress_cache_size)),
+        compress_cache_misses: AtomicUsize::new(0),
+        vk_root: root,
+        vk_merkle_tree: merkle_tree,
+        allowed_vk_map,
+        core_shape_config,
+        recursion_shape_config,
+        vk_verification,
+        wrap_program: OnceLock::new(),
+        wrap_vk: OnceLock::new(),
     }
+}
 
     /// Fully initializes the programs, proving keys, and verifying keys that are normally
     /// lazily initialized. TODO: remove this.
@@ -265,24 +275,38 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
     }
 
     /// Generate a proof of an SP1 program with the specified inputs.
-    #[instrument(name = "execute", level = "info", skip_all)]
-    pub fn execute<'a>(
-        &'a self,
-        elf: &[u8],
-        stdin: &SP1Stdin,
-        mut context: SP1Context<'a>,
-    ) -> Result<(SP1PublicValues, ExecutionReport), ExecutionError> {
-        context.subproof_verifier.replace(Arc::new(self));
-        let program = self.get_program(elf).unwrap();
-        let opts = SP1CoreOpts::default();
-        let mut runtime = Executor::with_context(program, opts, context);
-        runtime.write_vecs(&stdin.buffer);
-        for (proof, vkey) in stdin.proofs.iter() {
-            runtime.write_proof(proof.clone(), vkey.clone());
-        }
-        runtime.run_fast()?;
-        Ok((SP1PublicValues::from(&runtime.state.public_values_stream), runtime.report))
+    /// 执行给定的 ELF 二进制文件，并返回公共值和执行报告。
+#[instrument(name = "execute", level = "info", skip_all)]
+pub fn execute<'a>(
+    &'a self,
+    elf: &[u8],            // ELF 二进制文件的字节切片
+    stdin: &SP1Stdin,      // 标准输入
+    mut context: SP1Context<'a>, // 执行上下文
+) -> Result<(SP1PublicValues, ExecutionReport), ExecutionError> {
+    // 将当前实例作为子证明验证器替换到上下文中
+    context.subproof_verifier.replace(Arc::new(self));
+
+    // 获取程序对象
+    let program = self.get_program(elf).unwrap();
+
+    // 使用默认选项初始化执行器
+    let opts = SP1CoreOpts::default();
+    let mut runtime = Executor::with_context(program, opts, context);
+
+    // 将标准输入的缓冲区写入执行器
+    runtime.write_vecs(&stdin.buffer);
+
+    // 将标准输入中的证明和验证密钥写入执行器
+    for (proof, vkey) in stdin.proofs.iter() {
+        runtime.write_proof(proof.clone(), vkey.clone());
     }
+
+    // 快速运行程序
+    runtime.run_fast()?;
+
+    // 返回公共值和执行报告
+    Ok((SP1PublicValues::from(&runtime.state.public_values_stream), runtime.report))
+}
 
     /// Generate shard proofs which split up and prove the valid execution of a RISC-V program with
     /// the core prover. Uses the provided context.

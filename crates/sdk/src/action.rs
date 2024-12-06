@@ -33,9 +33,20 @@ impl<'a> Execute<'a> {
 
     /// Execute the program on the input, consuming the built action `self`.
     pub fn run(self) -> Result<(SP1PublicValues, ExecutionReport)> {
+        // 解构 self，获取 prover、elf、stdin 和 context_builder。
         let Self { prover, elf, stdin, mut context_builder } = self;
+
+        // 构建执行上下文。
         let context = context_builder.build();
-        Ok(prover.sp1_prover().execute(elf, &stdin, context)?)
+
+        // 从 prover 实例中获取 SP1 prover。
+        let sp1_prover = prover.sp1_prover();
+
+        // 使用给定的 ELF 二进制文件、标准输入和执行上下文执行程序。
+        let execution_result = sp1_prover.execute(elf, &stdin, context);
+
+        // 检查执行是否成功并返回结果。
+        Ok(execution_result?)
     }
 
     /// Add a runtime [Hook](super::Hook) into the context.

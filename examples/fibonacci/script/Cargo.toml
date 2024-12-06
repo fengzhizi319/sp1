@@ -32,5 +32,5 @@ path = "bin/execute.rs"
 name = "fibonacci-script"
 path = "src/main.rs"
 
-[features]
-cuda = ["sp1-sdk/cuda"]
+#[features]
+#cuda = ["sp1-sdk/cuda"]
