@@ -2,13 +2,5 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/examples/scalar-multiplication-rust" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/examples/scalar-multiplication-rust/contracts/lib/forge-std" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/examples/scalar-multiplication-rust/contracts/lib/sp1-contracts" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/examples/scalar-multiplication-rust/contracts/lib/sp1-contracts/contracts/lib/forge-std" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/examples/scalar-multiplication-rust/contracts/lib/sp1-contracts/contracts/lib/openzeppelin-contracts" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/examples/scalar-multiplication-rust/contracts/lib/sp1-contracts/contracts/lib/openzeppelin-contracts/lib/erc4626-tests" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/examples/scalar-multiplication-rust/contracts/lib/sp1-contracts/contracts/lib/openzeppelin-contracts/lib/forge-std" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/examples/scalar-multiplication-rust/contracts/lib/sp1-contracts/contracts/lib/openzeppelin-contracts/lib/forge-std/lib/ds-test" vcs="Git" />
   </component>
 </project>
